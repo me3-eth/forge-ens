@@ -1,5 +1,28 @@
 #!/bin/bash
 
+if [ ! -e .env ] ; then
+  echo -e ".env file is missing. Please run\n\tcp .env.template .env\nand fill out missing data"
+  exit 1
+fi
+
+echo -n "Dependency check..."
+deps=0
+
+for name in curl jq
+do
+  if ! command -v $name >/dev/null 2>&1 ; then
+    echo -en "\nMISSING $name"
+    deps=1
+  fi
+done
+
+if [ $deps -ne 1 ] ; then
+  echo 'OK'
+else
+  echo -e "\nInstall missing dependencies before continuing"
+  exit 1
+fi
+
 export $(grep -v '^#' .env | xargs)
 
 # Generate list of ENS related addresses, env var must start with ENS_ADDR_
@@ -21,3 +44,4 @@ do
 
   printf "{\"abi\":%s,\"bytecode\":\"%s\"}" "${abi}" "${bytecode}" > abis/$filename
 done
+echo "Contracts saved in abis/"
