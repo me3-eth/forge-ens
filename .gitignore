@@ -1,4 +1,5 @@
 .env
 cache/
+out/
 *.swp
 *.swo
