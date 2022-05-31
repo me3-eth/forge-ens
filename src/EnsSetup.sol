@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
 
 import "ens-contracts/registry/ENS.sol";
 import "ens-contracts/registry/ENSRegistry.sol";
@@ -17,17 +17,7 @@ contract MagicMoney is PriceOracle {
   }
 }
 
-interface CheatCodes {
-  function load (address, bytes32) external returns(bytes32);
-  function prank (address) external;
-  function store (address, bytes32, bytes32) external;
-  function warp (uint256) external;
-  function expectEmit (bool, bool, bool, bool) external;
-}
-
-contract EnsSetup is DSTest {
-  CheatCodes public cheats = CheatCodes(HEVM_ADDRESS);
-
+contract EnsSetup is Test {
   ENSRegistry private _oldEns;
 
   PriceOracle public _priceOracle;
@@ -45,6 +35,10 @@ contract EnsSetup is DSTest {
     return keccak256(bytes(node));
   }
 
+  function namehash (bytes32 node, bytes32 labelhash) public returns(bytes32) {
+    return keccak256(abi.encodePacked(node, labelhash));
+  }
+
   function setUp() public virtual {
     _oldEns = new ENSRegistry();
     _priceOracle = new MagicMoney();
@@ -59,13 +53,13 @@ contract EnsSetup is DSTest {
 
     // set .eth owner to BaseRegistrarImplementation
     uint256 ethOwnerSlot = uint256(keccak256(abi.encode(ethNode, 0)));
-    cheats.store(address(_ens), bytes32(ethOwnerSlot), bytes32(uint256(uint160(address(_baseRegistrar)))));
+    vm.store(address(_ens), bytes32(ethOwnerSlot), bytes32(uint256(uint160(address(_baseRegistrar)))));
 
     // make sure chain is at least 91 days old so that labels can be registered
-    cheats.warp(_baseRegistrar.GRACE_PERIOD() + 1 days);
+    vm.warp(_baseRegistrar.GRACE_PERIOD() + 1 days);
 
     // register testing.eth
-    cheats.prank(CONTROLLER_ADDR);
+    vm.prank(CONTROLLER_ADDR);
     _baseRegistrar.register(uint256(labelhash("testing")), address(this), 86400);
 
     // use current public ENS registrar controller
