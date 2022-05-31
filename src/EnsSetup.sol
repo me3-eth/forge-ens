@@ -30,7 +30,7 @@ contract EnsSetup is Test {
 
   // value taken from ENS contract: BulkRenewal @ 3b52784
   bytes32 public ethNode = 0x93cdeb708b7545dc668eb9280176169d1c33cfd8ed6f04690a0bcc88a93fc4ae;
-  bytes32 public testNode;
+  bytes32 public demoNode;
 
   function labelhash (string memory node) public returns(bytes32) {
     return keccak256(bytes(node));
@@ -60,10 +60,10 @@ contract EnsSetup is Test {
     vm.warp(_baseRegistrar.GRACE_PERIOD() + 1 days);
 
     // register testing.eth
-    bytes32 hashedLabel = labelhash("testing");
+    bytes32 hashedLabel = labelhash("demo");
     vm.prank(CONTROLLER_ADDR);
     _baseRegistrar.register(uint256(hashedLabel), address(this), 86400);
-    testNode = namehash(ethNode, hashedLabel);
+    demoNode = namehash(ethNode, hashedLabel);
 
     // use current public ENS registrar controller
     _defaultRegistrarController = new ETHRegistrarController(_baseRegistrar, _priceOracle, 60, 86400);

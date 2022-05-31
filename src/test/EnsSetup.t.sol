@@ -13,6 +13,6 @@ contract TestEnsSetup is Test {
   }
 
   function testTestNodeGenerated () public {
-    assertEq(_ens.testNode(), 0x752abc59291a33b761efe24d65fe88c18bcb7a92fbad9670ce6e8e9e098ee3d1);
+    assertEq32(_ens.demoNode(), 0xe16d706abaf956b7ea28cbd2c8fdee2870106a93d02046daf8c54bc46bf61cbf);
   }
 }
