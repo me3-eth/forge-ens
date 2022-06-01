@@ -1,47 +1,61 @@
 # forge-ens
 
-ENS contracts that are forge compatible.
-
-## Why?
-
-Maybe it exists somewhere but `ensdomains/ens-contracts` does not have the currently deployed ENS contracts, even if you roll back to the first commit. I've tried searching the rest of the Github org without success.
-
-## What
-
-1. a bash script to download the contracts deployed at given addresses
-2. these contracts are committed to the repo so that you can just include this without fuss
-3. a setup contract so you can just get to business
+Forge-compatible ENS contracts, attempting to mirror mainnet as best as possible.
 
 ## Usage
 
-With `forge`:
+Install:
 
 ```sh
 forge install me3-eth/forge-ens
 ```
 
-## Development
+Use in your tests:
 
-1. Download dependencies:
-    ```sh
-    # arch
-    pacman -S jq curl
-    
-    # debian
-    apt install jq curl
-    ```
-2. Get yourself an [Etherscan account](https://docs.etherscan.io/getting-started/creating-an-account) and [Etherscan API key](https://docs.etherscan.io/getting-started/viewing-api-usage-statistics)
-3. Make your own copy of the env vars
-    ```sh
-    cp .env.template .env
-    ```
-4. Update the `ETHERSCAN_API_KEY` value with your API key
-5. Profit
+```solidity
+import { EnsSetup } from "forge-ens/EnsSetup.sol";
 
-### Updating the contracts
+contract TestSomething is EnsSetup {
+  function setUp () public {
+    super.setUp();
 
-The **get-ens.sh** script will download the contracts that match the addresses in the **.env** file.
+    // create yo.demo.eth with PublicResolver at a 1yr TTL
+    _ens.setSubnodeRecord(demoNode, labelhash("yo"), address(this), address(_defaultResolver), 86400);
 
+    // create someone.eth via prank
+    vm.prank(CONTROLLER_ADDR)
+    _baseRegistrar.register(uint256(labelhash("someone")), address(this), 86400);
+
+    // create somewhere.eth the standard way
+    bytes32 commitment = _defaultRegistrarController.commit(keccak256(bytes("whatever")));
+    vm.warp(block.timestamp + 60); // minimum commitment age
+    _defaultRegistrarController.register{value: 5000}("somewhere", address(this), 86400, commitment);
+  }
+}
+```
+
+`EnsSetup` inherits the `Test` contract from `foundry-rs/forge-std` so you have access to all assertions and the VM.
+
+## Why
+
+The process of setting up the entire ENS stack can be difficult. This contract
+provides all of the pieces to interact with ENS in tests.
+
+You could also just fork mainnet.
+
+## Roadmap
+
+### Use deployed contracts
+
+The ENS repository doesn't exactly match the deployed contracts. We get close by
+going far enough back in history. It would be more accurate to use the deployed
+contracts as a basis for testing.
+
+### Versioning
+
+The ENS team is working on new contracts, a big one being `NameWrapper`.
+Versioning individual contracts would allow for testing compatibility across a
+variety of deployed contracts.
 
 ## License clarifications
 
