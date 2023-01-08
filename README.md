@@ -2,6 +2,8 @@
 
 Forge-compatible ENS contracts, attempting to mirror mainnet as best as possible.
 
+_NOTE:_ If you are doing any time-based work, this pushes your chain aheah 91 days. This is to work with an internal check in `BaseRegistrarImplementation.sol` from ENS.
+
 ## Usage
 
 Install:
@@ -35,6 +37,58 @@ contract TestSomething is EnsSetup {
 ```
 
 `EnsSetup` inherits the `Test` contract from `foundry-rs/forge-std` so you have access to all assertions and the VM.
+
+### Exposed variables and functions
+
+#### `labelhash (string memory node) returns(bytes32)`
+
+Please see <https://docs.ens.domains/contract-api-reference/name-processing#hashing-names>
+
+#### `namehash (bytes32 node, bytes32 labelhash) returns(bytes32)`
+
+Please see <https://docs.ens.domains/contract-api-reference/name-processing#hashing-names>
+
+#### `CONTROLLER_ADDR`
+
+The controller of the base registrar
+
+#### `ethNode`
+
+Matches the base `.eth` node hash from [`BulkRenewal.sol`](https://github.com/ensdomains/ethregistrar/blob/eb81e93861871122044dace61ca5a99b47257520/contracts/BulkRenewal.sol#L9)
+
+#### `demoNode`
+
+During `setUp()`, this will be created as `demo.eth`
+
+#### `_ens`
+
+An implementation of the ENS registry, specifically `ENSRegistryWithFallback.sol`
+
+#### `_baseRegistrar`
+
+Exposing `BaseRegistrarImplementation.sol` for doing additional ENS setup. For example:
+
+```solidity
+// create someone.eth via prank, making the owner the calling contract
+vm.prank(CONTROLLER_ADDR)
+_baseRegistrar.register(uint256(labelhash("someone")), address(this), 86400);
+```
+
+#### `_priceOracle`
+
+Simple price oracle used by the default registrar.
+
+#### `_defaultRegistrarController`
+
+The registrar that users/contracts will interact with in production. For example:
+
+```solidity
+// create somewhere.eth the standard way, calling contract becomes the owner
+bytes32 commitment = _defaultRegistrarController.commit(keccak256(bytes("notimportant")));
+vm.warp(block.timestamp + 60); // move forward in time for the minimum commitment age
+uint256 cost = _priceOracle.price();
+_defaultRegistrarController.register{value: cost}("somewhere", address(this), 86400, commitment);
+```
 
 ## Why
 
